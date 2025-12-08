@@ -1,59 +1,83 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var title = ViewData["Title"] ?? "GrapheneTrace Admin";
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@ViewData["Title"] - GrapheneTrace</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/GrapheneTrace.styles.css" asp-append-version="true"/>
+    <meta charset="utf-8" />
+    <title>@title - GrapheneTrace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/GrapheneTrace.styles.css" asp-append-version="true" />
 </head>
 <body>
-<header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-        <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">GrapheneTrace</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Clinicians" asp-action="Index">Clinicians</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Patients" asp-action="Index">Patients</a>
-                    </li>
-                </ul>
+    <div class="d-flex" id="app-wrapper">
+        <!-- SIDEBAR -->
+        <nav id="sidebar" class="bg-dark text-white">
+            <div class="sidebar-header p-3">
+                <h4 class="mb-0">GrapheneTrace</h4>
+                <small class="text-muted">Admin Panel</small>
             </div>
-        </div>
-    </nav>
-</header>
-<div class="container">
-    <main role="main" class="pb-3">
-        @RenderBody()
-    </main>
-</div>
+            <hr class="border-secondary my-0" />
 
-<footer class="border-top footer text-muted">
-    <div class="container">
-        &copy; 2025 - GrapheneTrace - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <ul class="nav flex-column p-2">
+                <li class="nav-item mb-1">
+                    <a class="nav-link text-white" asp-controller="Home" asp-action="Index">
+                        <span class="me-2">🏠</span> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a class="nav-link text-white" asp-controller="Patients" asp-action="Index">
+                        <span class="me-2">🧑‍⚕️</span> Patients
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a class="nav-link text-white" asp-controller="Clinicians" asp-action="Index">
+                        <span class="me-2">👨‍⚕️</span> Clinicians
+                    </a>
+                </li>
+                <li class="nav-item mb-1">
+                    <a class="nav-link text-white" asp-controller="Admin" asp-action="Index">
+                        <span class="me-2">⚙️</span> Admin
+                    </a>
+                </li>
+
+                <!-- If later you add login: -->
+                @* 
+                <li class="nav-item mt-3">
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="btn btn-sm btn-outline-light w-100">Logout</button>
+                    </form>
+                </li>
+                *@
+            </ul>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div id="content-wrapper" class="flex-grow-1">
+            <header class="border-bottom bg-white">
+                <div class="container-fluid py-2 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@title</h5>
+                    @* You can put user info/top-right actions here later *@
+                </div>
+            </header>
+
+            <main class="container-fluid mt-3">
+                @RenderBody()
+            </main>
+
+            @* <footer class="border-top mt-4"> *@
+            @*     <div class="container-fluid py-2 text-muted small"> *@
+            @*         &copy; @DateTime.Now.Year - GrapheneTrace *@
+            @*     </div> *@
+            @* </footer> *@
+        </div>
     </div>
-</footer>
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="~/js/site.js" asp-append-version="true"></script>
-@await RenderSectionAsync("Scripts", required: false)
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

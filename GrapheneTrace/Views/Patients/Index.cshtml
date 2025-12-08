@@ -1,35 +1,53 @@
 @model IEnumerable<GrapheneTrace.Models.Patient>
 
-<h2>Patients</h2>
+@{
+    ViewData["Title"] = "Patients";
+}
 
-<p>
-    <a asp-action="Create">Create New Patient</a>
-</p>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Patients</h2>
+        <a asp-action="Create" class="btn btn-primary">Create New Patient</a>
+    </div>
 
-<table>
-    <thead>
-    <tr>
-        <th>Username</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Date of Birth</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var p in Model)
+    @if (!Model.Any())
     {
-        <tr>
-            <td>@p.User.Username</td>
-            <td>@p.User.FirstName @p.User.LastName</td>
-            <td>@p.User.Email</td>
-            <td>@p.DateOfBirth?.ToShortDateString()</td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@p.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@p.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@p.Id">Delete</a>
-            </td>
-        </tr>
+        <div class="alert alert-info">
+            No patients found. Click <strong>Create New Patient</strong> to add one.
+        </div>
     }
-    </tbody>
-</table>
+    else
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Username</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Date of Birth</th>
+                        <th style="width: 180px;"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td>@p.User.Username</td>
+                            <td>@p.User.FirstName @p.User.LastName</td>
+                            <td>@p.User.Email</td>
+                            <td>@p.DateOfBirth?.ToShortDateString()</td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Details</a>
+                                <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

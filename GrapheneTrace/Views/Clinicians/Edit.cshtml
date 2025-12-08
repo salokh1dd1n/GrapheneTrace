@@ -1,60 +1,103 @@
 @model GrapheneTrace.Models.ViewModels.ClinicianFormViewModel
 
-<h2>Edit Clinician</h2>
+@{
+    ViewData["Title"] = "Edit Clinician";
+}
 
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Id" />
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Edit Clinician</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-    <div>
-        <label>Username</label>
-        <input asp-for="Username" />
+                        <h5 class="mb-3">Login Details</h5>
+
+                        <div class="mb-3">
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">New Password (leave empty to keep current)</label>
+                            <input asp-for="Password" type="password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <h5 class="mt-4 mb-3">Personal Information</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FirstName" class="form-label"></label>
+                                <input asp-for="FirstName" class="form-control" />
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="LastName" class="form-label"></label>
+                                <input asp-for="LastName" class="form-control" />
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <h5 class="mt-4 mb-3">Clinician Information</h5>
+
+                        <div class="mb-3">
+                            <label asp-for="Specialisation" class="form-label"></label>
+                            <input asp-for="Specialisation" class="form-control" />
+                            <span asp-validation-for="Specialisation" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="RegistrationNumber" class="form-label"></label>
+                            <input asp-for="RegistrationNumber" class="form-control" />
+                            <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
+                        </div>
+
+                        <h5 class="mt-4 mb-3">Patient Access</h5>
+
+                        <div class="form-check mb-2">
+                            <input asp-for="AccessAllPatients" class="form-check-input" type="checkbox" />
+                            <label asp-for="AccessAllPatients" class="form-check-label">
+                                Access all patients
+                            </label>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            If <strong>Access all patients</strong> is unchecked, only the patients selected below will be accessible.
+                        </p>
+
+                        <div class="mb-3">
+                            <label class="form-label">Select patients</label>
+                            <select asp-for="SelectedPatientIds"
+                                    asp-items="Model.PatientsSelectList"
+                                    class="form-select"
+                                    multiple
+                                    size="8">
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">Back to list</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <div>
-        <label>New Password (leave empty to keep current)</label>
-        <input asp-for="Password" type="password" />
-    </div>
-
-    <div>
-        <label>First Name</label>
-        <input asp-for="FirstName" />
-    </div>
-
-    <div>
-        <label>Last Name</label>
-        <input asp-for="LastName" />
-    </div>
-
-    <div>
-        <label>Email</label>
-        <input asp-for="Email" type="email" />
-    </div>
-
-    <div>
-        <label>Specialisation</label>
-        <input asp-for="Specialisation" />
-    </div>
-
-    <div>
-        <label>Registration Number</label>
-        <input asp-for="RegistrationNumber" />
-    </div>
-
-    <div>
-        <label>
-            <input asp-for="AccessAllPatients" type="checkbox" />
-            Access all patients
-        </label>
-    </div>
-
-    <div>
-        <label>Select patients (if not all)</label><br />
-        <select asp-for="SelectedPatientIds" asp-items="Model.PatientsSelectList" multiple size="8"></select>
-    </div>
-
-    <button type="submit">Save</button>
-</form>
-
-<p>
-    <a asp-action="Index">Back to List</a>
-</p>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,18 +1,33 @@
 @model GrapheneTrace.Models.Patient
 
-<h2>Delete Patient</h2>
+@{
+    ViewData["Title"] = "Patient Details";
+}
 
-<p>Are you sure you want to delete this patient?</p>
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Patient Details</h4>
+            <div>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-primary">Edit</a>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Back to list</a>
+            </div>
+        </div>
+        <div class="card-body">
+            <h5 class="mb-3">Account Information</h5>
+            <dl class="row">
+                <dt class="col-sm-3">Username</dt>
+                <dd class="col-sm-9">@Model.User.Username</dd>
 
-<p>
-    <strong>Username:</strong> @Model.User.Username<br />
-    <strong>Name:</strong> @Model.User.FirstName @Model.User.LastName<br />
-    <strong>Email:</strong> @Model.User.Email<br />
-    <strong>Date of Birth:</strong> @Model.DateOfBirth?.ToShortDateString()
-</p>
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9">@Model.User.FirstName @Model.User.LastName</dd>
 
-<form asp-action="Delete" method="post">
-    <input type="hidden" asp-for="Id" />
-    <button type="submit">Delete</button>
-    <a asp-action="Index">Cancel</a>
-</form>
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@Model.User.Email</dd>
+
+                <dt class="col-sm-3">Date of Birth</dt>
+                <dd class="col-sm-9">@Model.DateOfBirth?.ToShortDateString()</dd>
+            </dl>
+        </div>
+    </div>
+</div>
