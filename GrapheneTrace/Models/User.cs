@@ -17,6 +17,6 @@ public class User
 
     // Navigation
     // public Patient? PatientProfile { get; set; }
-    // public Clinician? ClinicianProfile { get; set; }
+    public Clinician? ClinicianProfile { get; set; }
     public Admin? AdminProfile { get; set; }
 }
