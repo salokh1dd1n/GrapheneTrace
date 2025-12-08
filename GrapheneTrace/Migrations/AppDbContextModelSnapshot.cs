@@ -31,7 +31,8 @@ namespace GrapheneTrace.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -52,11 +53,16 @@ namespace GrapheneTrace.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("AccessAllPatients")
+                        .HasColumnType("bit");
+
                     b.Property<string>("RegistrationNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Specialisation")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -67,6 +73,21 @@ namespace GrapheneTrace.Migrations
                         .IsUnique();
 
                     b.ToTable("Clinicians");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.ClinicianPatient", b =>
+                {
+                    b.Property<int>("ClinicianId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClinicianId", "PatientId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("ClinicianPatients");
                 });
 
             modelBuilder.Entity("GrapheneTrace.Models.Patient", b =>
@@ -101,15 +122,18 @@ namespace GrapheneTrace.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -120,7 +144,8 @@ namespace GrapheneTrace.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -149,6 +174,25 @@ namespace GrapheneTrace.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("GrapheneTrace.Models.ClinicianPatient", b =>
+                {
+                    b.HasOne("GrapheneTrace.Models.Clinician", "Clinician")
+                        .WithMany("PatientLinks")
+                        .HasForeignKey("ClinicianId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GrapheneTrace.Models.Patient", "Patient")
+                        .WithMany("ClinicianLinks")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Clinician");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("GrapheneTrace.Models.Patient", b =>
                 {
                     b.HasOne("GrapheneTrace.Models.User", "User")
@@ -158,6 +202,16 @@ namespace GrapheneTrace.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.Clinician", b =>
+                {
+                    b.Navigation("PatientLinks");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.Patient", b =>
+                {
+                    b.Navigation("ClinicianLinks");
                 });
 
             modelBuilder.Entity("GrapheneTrace.Models.User", b =>
