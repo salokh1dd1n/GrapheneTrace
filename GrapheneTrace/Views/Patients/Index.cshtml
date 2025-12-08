@@ -10,9 +10,9 @@
     <thead>
     <tr>
         <th>Username</th>
-        <th>Full Name</th>
+        <th>Name</th>
         <th>Email</th>
-        <th>DOB</th>
+        <th>Date of Birth</th>
         <th></th>
     </tr>
     </thead>
@@ -21,7 +21,7 @@
     {
         <tr>
             <td>@p.User.Username</td>
-            <td>@p.User.FullName</td>
+            <td>@p.User.FirstName @p.User.LastName</td>
             <td>@p.User.Email</td>
             <td>@p.DateOfBirth?.ToShortDateString()</td>
             <td>

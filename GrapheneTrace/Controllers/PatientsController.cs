@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using GrapheneTrace.Data;
 using GrapheneTrace.Models;
 using GrapheneTrace.Models.ViewModels;
@@ -32,7 +33,8 @@ namespace GrapheneTrace.Controllers
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (patient == null) return NotFound();
+            if (patient == null)
+                return NotFound();
 
             return View(patient);
         }
@@ -40,7 +42,8 @@ namespace GrapheneTrace.Controllers
         // GET: Patients/Create
         public IActionResult Create()
         {
-            return View(new PatientFormViewModel());
+            var vm = new PatientFormViewModel();
+            return View(vm);
         }
 
         // POST: Patients/Create
@@ -51,20 +54,22 @@ namespace GrapheneTrace.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // create User
+            // Create linked User
             var user = new User
             {
                 Username = model.Username,
-                PasswordHash = model.Password,   // TODO: hash later
-                FullName = model.FullName,
+                PasswordHash = model.Password, // TODO: hash later
+                FirstName = model.FirstName,
+                LastName = model.LastName,
                 Email = model.Email,
                 Role = UserRole.Patient
             };
 
+            // Create Patient
             var patient = new Patient
             {
                 User = user,
-                DateOfBirth = model.DateOfBirth,
+                DateOfBirth = model.DateOfBirth
             };
 
             _context.Patients.Add(patient);
@@ -80,16 +85,18 @@ namespace GrapheneTrace.Controllers
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (patient == null) return NotFound();
+            if (patient == null)
+                return NotFound();
 
             var vm = new PatientFormViewModel
             {
                 Id = patient.Id,
                 Username = patient.User.Username,
-                // we DON'T load password back – leave empty
-                FullName = patient.User.FullName,
+                // Password left empty on purpose
+                FirstName = patient.User.FirstName,
+                LastName = patient.User.LastName,
                 Email = patient.User.Email,
-                DateOfBirth = patient.DateOfBirth,
+                DateOfBirth = patient.DateOfBirth
             };
 
             return View(vm);
@@ -100,7 +107,8 @@ namespace GrapheneTrace.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, PatientFormViewModel model)
         {
-            if (id != model.Id) return NotFound();
+            if (id != model.Id)
+                return NotFound();
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -109,18 +117,23 @@ namespace GrapheneTrace.Controllers
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (patient == null) return NotFound();
+            if (patient == null)
+                return NotFound();
 
-            // update user
+            // Update User fields
             patient.User.Username = model.Username;
+
             if (!string.IsNullOrWhiteSpace(model.Password))
             {
-                patient.User.PasswordHash = model.Password;  // TODO: hash later
+                // Only change password if admin entered a new one
+                patient.User.PasswordHash = model.Password; // TODO: hash later
             }
-            patient.User.FullName = model.FullName;
+
+            patient.User.FirstName = model.FirstName;
+            patient.User.LastName = model.LastName;
             patient.User.Email = model.Email;
 
-            // update patient fields
+            // Update Patient fields
             patient.DateOfBirth = model.DateOfBirth;
 
             await _context.SaveChangesAsync();
@@ -135,7 +148,8 @@ namespace GrapheneTrace.Controllers
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (patient == null) return NotFound();
+            if (patient == null)
+                return NotFound();
 
             return View(patient);
         }
@@ -149,9 +163,10 @@ namespace GrapheneTrace.Controllers
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (patient == null) return NotFound();
+            if (patient == null)
+                return NotFound();
 
-            // safer: delete the User → cascade deletes Patient (if configured)
+            // Delete the User – cascade should delete Patient if configured
             _context.Users.Remove(patient.User);
             await _context.SaveChangesAsync();
 

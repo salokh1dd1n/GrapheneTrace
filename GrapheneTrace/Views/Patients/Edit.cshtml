@@ -1,21 +1,21 @@
 @model GrapheneTrace.Models.ViewModels.PatientFormViewModel
 
-<h2>Create Patient</h2>
+<h2>Edit Patient</h2>
 
-<form asp-action="Create" method="post">
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
     <div>
         <label>Username</label>
         <input asp-for="Username" />
     </div>
     <div>
-        <label>Password</label>
+        <label>New Password (leave empty to keep current)</label>
         <input asp-for="Password" type="password" />
     </div>
     <div>
         <label>First Name</label>
         <input asp-for="FirstName" />
     </div>
-
     <div>
         <label>Last Name</label>
         <input asp-for="LastName" />
@@ -28,6 +28,7 @@
         <label>Date of Birth</label>
         <input asp-for="DateOfBirth" type="date" />
     </div>
+
     <button type="submit">Save</button>
 </form>
 <p>
