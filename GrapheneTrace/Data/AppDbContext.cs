@@ -11,4 +11,5 @@ public class AppDbContext : DbContext
     
     // connect the C# model User to table in the DB
     public DbSet<User> Users { get; set; }
+    public DbSet<Admin> Admins { get; set; }
 }
