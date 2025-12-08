@@ -10,7 +10,8 @@ public class AppDbContext : DbContext
     }
     
     // connect the C# model User to table in the DB
-    public DbSet<User> Users { get; set; }
-    public DbSet<Admin> Admins { get; set; }
-    public DbSet<Clinician> Clinicians { get; set; }
+    public DbSet<User> Users { get; set; } = default!;
+    public DbSet<Admin> Admins { get; set; } = default!;
+    public DbSet<Clinician> Clinicians { get; set; } = default!;
+    public DbSet<Patient> Patients { get; set; } = default!;
 }
