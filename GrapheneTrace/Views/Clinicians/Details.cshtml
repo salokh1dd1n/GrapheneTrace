@@ -1,0 +1,55 @@
+@model GrapheneTrace.Models.Clinician
+
+<h2>Clinician Details</h2>
+
+<h3>Account Information</h3>
+<p><strong>Username:</strong> @Model.User.Username</p>
+<p><strong>Name:</strong> @Model.User.FirstName @Model.User.LastName</p>
+<p><strong>Email:</strong> @Model.User.Email</p>
+
+<h3>Clinician Info</h3>
+<p><strong>Specialisation:</strong> @Model.Specialisation</p>
+<p><strong>Registration Number:</strong> @Model.RegistrationNumber</p>
+<p><strong>Access All Patients:</strong> @(Model.AccessAllPatients ? "Yes" : "No")</p>
+
+@if (Model.AccessAllPatients)
+{
+    <p>This clinician has access to <strong>all patients</strong>.</p>
+}
+else
+{
+    <h3>Allowed Patients</h3>
+
+    @if (Model.PatientLinks != null && Model.PatientLinks.Any())
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Date of Birth</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var link in Model.PatientLinks)
+            {
+                var patient = link.Patient;
+                <tr>
+                    <td>@patient.User.FirstName @patient.User.LastName</td>
+                    <td>@patient.User.Email</td>
+                    <td>@patient.DateOfBirth?.ToShortDateString()</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No patients assigned.</p>
+    }
+}
+
+<p>
+    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</p>

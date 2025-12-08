@@ -1,0 +1,60 @@
+@model GrapheneTrace.Models.ViewModels.ClinicianFormViewModel
+
+<h2>Edit Clinician</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div>
+        <label>Username</label>
+        <input asp-for="Username" />
+    </div>
+
+    <div>
+        <label>New Password (leave empty to keep current)</label>
+        <input asp-for="Password" type="password" />
+    </div>
+
+    <div>
+        <label>First Name</label>
+        <input asp-for="FirstName" />
+    </div>
+
+    <div>
+        <label>Last Name</label>
+        <input asp-for="LastName" />
+    </div>
+
+    <div>
+        <label>Email</label>
+        <input asp-for="Email" type="email" />
+    </div>
+
+    <div>
+        <label>Specialisation</label>
+        <input asp-for="Specialisation" />
+    </div>
+
+    <div>
+        <label>Registration Number</label>
+        <input asp-for="RegistrationNumber" />
+    </div>
+
+    <div>
+        <label>
+            <input asp-for="AccessAllPatients" type="checkbox" />
+            Access all patients
+        </label>
+    </div>
+
+    <div>
+        <label>Select patients (if not all)</label><br />
+        <select asp-for="SelectedPatientIds" asp-items="Model.PatientsSelectList" multiple size="8"></select>
+    </div>
+
+    <button type="submit">Save</button>
+</form>
+
+<p>
+    <a asp-action="Index">Back to List</a>
+</p>

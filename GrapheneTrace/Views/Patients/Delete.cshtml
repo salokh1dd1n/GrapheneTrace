@@ -1,0 +1,33 @@
+@model GrapheneTrace.Models.Patient
+
+<h2>Delete Patient</h2>
+
+<p>Are you sure you want to delete this patient?</p>
+
+<h3>Account Information</h3>
+<p><strong>Username:</strong> @Model.User.Username</p>
+<p><strong>Name:</strong> @Model.User.FirstName @Model.User.LastName</p>
+<p><strong>Email:</strong> @Model.User.Email</p>
+
+<h3>Patient Info</h3>
+<p><strong>Date of Birth:</strong> @Model.DateOfBirth?.ToShortDateString()</p>
+
+@if (Model.ClinicianLinks != null && Model.ClinicianLinks.Any())
+{
+    <h3>Clinicians who can access this patient</h3>
+    <ul>
+        @foreach (var link in Model.ClinicianLinks)
+        {
+            <li>
+                @link.Clinician.User.FirstName @link.Clinician.User.LastName
+                (@link.Clinician.User.Email)
+            </li>
+        }
+    </ul>
+}
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit">Delete</button>
+    <a asp-action="Index">Cancel</a>
+</form>

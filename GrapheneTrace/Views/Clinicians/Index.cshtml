@@ -1,0 +1,46 @@
+@model IEnumerable<GrapheneTrace.Models.Clinician>
+
+<h2>Clinicians</h2>
+
+<p>
+    <a asp-action="Create">Create New Clinician</a>
+</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Username</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Specialisation</th>
+        <th>Access</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var c in Model)
+    {
+        <tr>
+            <td>@c.User.Username</td>
+            <td>@c.User.FirstName @c.User.LastName</td>
+            <td>@c.User.Email</td>
+            <td>@c.Specialisation</td>
+            <td>
+                @if (c.AccessAllPatients)
+                {
+                    <span>All patients</span>
+                }
+                else
+                {
+                    <span>Selected patients (@c.PatientLinks.Count)</span>
+                }
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@c.Id">Edit</a> |
+                <a asp-action="Details" asp-route-id="@c.Id">Details</a> |
+                <a asp-action="Delete" asp-route-id="@c.Id">Delete</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
