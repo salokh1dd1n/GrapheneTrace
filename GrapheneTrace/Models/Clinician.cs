@@ -1,21 +1,21 @@
+using System;
 using System.Collections.Generic;
 
 namespace GrapheneTrace.Models
 {
     public class Clinician
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
-        public int UserId { get; set; }
+        public string UserId { get; set; } = default!;
+        public ApplicationUser User { get; set; } = default!;
+
         public string? Specialisation { get; set; }
         public string? RegistrationNumber { get; set; }
 
-        // If true → clinician can see ALL patients
+        // If true → clinician can access ALL patients. If false → only those in links.
         public bool AccessAllPatients { get; set; } = true;
 
-        public User User { get; set; } = default!;
-
-        // 🔹 Navigation: patients this clinician can access (when AccessAllPatients == false)
         public ICollection<ClinicianPatient> PatientLinks { get; set; } = new List<ClinicianPatient>();
     }
 }

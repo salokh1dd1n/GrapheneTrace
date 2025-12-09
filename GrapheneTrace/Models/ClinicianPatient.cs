@@ -1,11 +1,13 @@
+using System;
+
 namespace GrapheneTrace.Models
 {
     public class ClinicianPatient
     {
-        public int ClinicianId { get; set; }
-        public int PatientId { get; set; }
-
+        public Guid ClinicianId { get; set; }
         public Clinician Clinician { get; set; } = default!;
+
+        public Guid PatientId { get; set; }
         public Patient Patient { get; set; } = default!;
     }
 }

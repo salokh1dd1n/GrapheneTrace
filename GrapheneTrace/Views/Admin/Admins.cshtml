@@ -1,0 +1,39 @@
+@model IEnumerable<GrapheneTrace.Models.ApplicationUser>
+
+@{
+    ViewData["Title"] = "Admins";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Admins</h2>
+    <a asp-action="CreateAdmin" class="btn btn-primary">Create Admin</a>
+</div>
+
+<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>User ID</th>
+        <th style="width: 170px;">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var admin in Model)
+    {
+        <tr>
+            <td>@(admin.FirstName) @(admin.LastName)</td>
+            <td>@admin.Email</td>
+            <td>@admin.Id</td>
+            <td>
+                <a asp-action="EditAdmin"
+                   asp-route-id="@admin.Id"
+                   class="btn btn-sm btn-outline-secondary">Edit</a>
+                <a asp-action="DeleteUser"
+                   asp-route-id="@admin.Id"
+                   class="btn btn-sm btn-outline-danger ms-1">Delete</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

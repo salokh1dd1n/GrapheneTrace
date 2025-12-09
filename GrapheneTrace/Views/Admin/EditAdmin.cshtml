@@ -1,0 +1,41 @@
+@model GrapheneTrace.ViewModels.EditUserViewModel
+
+<div class="container mt-4">
+    <h2>Edit Admin</h2>
+
+    <form asp-action="EditAdmin" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <!-- FirstName, LastName, Email inputs only -->
+
+        <div class="mb-3">
+            <label asp-for="FirstName" class="form-label"></label>
+            <input asp-for="FirstName" class="form-control" />
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="LastName" class="form-label"></label>
+            <input asp-for="LastName" class="form-control" />
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a asp-action="Admins" class="btn btn-secondary">Back to list</a>
+            <a asp-action="ResetPassword"
+               asp-route-id="@Model.Id"
+               class="btn btn-outline-warning">
+                Forgot Password / Reset
+            </a>
+        </div>
+    </form>
+</div>

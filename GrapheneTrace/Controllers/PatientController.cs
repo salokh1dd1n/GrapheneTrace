@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading.Tasks;
 using GrapheneTrace.Data;
 using GrapheneTrace.Models;
@@ -10,13 +9,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GrapheneTrace.Controllers
 {
-    [Authorize(Roles = "Clinician")]
-    public class ClinicianController : Controller
+    [Authorize(Roles = "Patient")]
+    public class PatientController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly AppDbContext _context;
 
-        public ClinicianController(UserManager<ApplicationUser> userManager, AppDbContext context)
+        public PatientController(UserManager<ApplicationUser> userManager, AppDbContext context)
         {
             _userManager = userManager;
             _context     = context;
@@ -24,37 +23,7 @@ namespace GrapheneTrace.Controllers
 
         public IActionResult Dashboard()
         {
-            return View(); // Views/Clinician/Dashboard.cshtml
-        }
-
-        // Patients this clinician can see
-        public async Task<IActionResult> Patients()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
-
-            var clinician = await _context.Clinicians
-                .Include(c => c.PatientLinks)
-                .ThenInclude(cp => cp.Patient)
-                .ThenInclude(p => p.User)
-                .FirstOrDefaultAsync(c => c.UserId == user.Id);
-
-            if (clinician == null)
-                return NotFound();
-
-            if (clinician.AccessAllPatients)
-            {
-                var allPatients = await _context.Patients
-                    .Include(p => p.User)
-                    .ToListAsync();
-                return View(allPatients); // Views/Clinician/Patients.cshtml
-            }
-            else
-            {
-                var allowedPatients = clinician.PatientLinks.Select(cp => cp.Patient).ToList();
-                return View(allowedPatients);
-            }
+            return View(); // Views/Patient/Dashboard.cshtml
         }
 
         [HttpGet]
@@ -64,22 +33,20 @@ namespace GrapheneTrace.Controllers
             if (user == null)
                 return NotFound();
 
-            var clinician = await _context.Clinicians.FirstOrDefaultAsync(c => c.UserId == user.Id);
-            if (clinician == null)
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id);
+            if (patient == null)
             {
-                clinician = new Clinician { UserId = user.Id };
-                _context.Clinicians.Add(clinician);
+                patient = new Patient { UserId = user.Id };
+                _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
             }
 
-            var vm = new ClinicianProfileViewModel
+            var vm = new PatientProfileViewModel
             {
-                FirstName         = user.FirstName,
-                LastName          = user.LastName,
-                Email             = user.Email,
-                DateOfBirth       = null,
-                Specialisation    = clinician.Specialisation,
-                RegistrationNumber = clinician.RegistrationNumber
+                FirstName  = user.FirstName,
+                LastName   = user.LastName,
+                Email      = user.Email,
+                DateOfBirth = patient.DateOfBirth
             };
 
             return View(vm);
@@ -87,7 +54,7 @@ namespace GrapheneTrace.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(ClinicianProfileViewModel model)
+        public async Task<IActionResult> Profile(PatientProfileViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -96,11 +63,11 @@ namespace GrapheneTrace.Controllers
             if (user == null)
                 return NotFound();
 
-            var clinician = await _context.Clinicians.FirstOrDefaultAsync(c => c.UserId == user.Id);
-            if (clinician == null)
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id);
+            if (patient == null)
             {
-                clinician = new Clinician { UserId = user.Id };
-                _context.Clinicians.Add(clinician);
+                patient = new Patient { UserId = user.Id };
+                _context.Patients.Add(patient);
             }
 
             user.FirstName = model.FirstName;
@@ -108,8 +75,7 @@ namespace GrapheneTrace.Controllers
             user.Email     = model.Email;
             user.UserName  = model.Email;
 
-            clinician.Specialisation     = model.Specialisation;
-            clinician.RegistrationNumber = model.RegistrationNumber;
+            patient.DateOfBirth = model.DateOfBirth;
 
             await _userManager.UpdateAsync(user);
             await _context.SaveChangesAsync();

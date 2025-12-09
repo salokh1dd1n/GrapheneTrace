@@ -1,19 +1,19 @@
-@* @model IEnumerable<GrapheneTrace.Models.Patient> *@
+@* @model IEnumerable<GrapheneTrace.Models.Admin> *@
 @* *@
 @* @{ *@
-@*     ViewData["Title"] = "Patients"; *@
+@*     ViewData["Title"] = "Admins"; *@
 @* } *@
 @* *@
 @* <div class="container-fluid mt-4"> *@
 @*     <div class="d-flex justify-content-between align-items-center mb-3"> *@
-@*         <h2>Patients</h2> *@
-@*         <a asp-action="Create" class="btn btn-primary">Create New Patient</a> *@
+@*         <h2>Admins</h2> *@
+@*         <a asp-action="Create" class="btn btn-primary">Create New Admin</a> *@
 @*     </div> *@
 @* *@
 @*     @if (!Model.Any()) *@
 @*     { *@
 @*         <div class="alert alert-info"> *@
-@*             No patients found. Click <strong>Create New Patient</strong> to add one. *@
+@*             No admin users found. *@
 @*         </div> *@
 @*     } *@
 @*     else *@
@@ -26,22 +26,22 @@
 @*                         <th>Username</th> *@
 @*                         <th>Name</th> *@
 @*                         <th>Email</th> *@
-@*                         <th>Date of Birth</th> *@
+@*                         <th>Notes</th> *@
 @*                         <th style="width: 220px;"></th> *@
 @*                     </tr> *@
 @*                     </thead> *@
 @*                     <tbody> *@
-@*                     @foreach (var p in Model) *@
+@*                     @foreach (var a in Model) *@
 @*                     { *@
 @*                         <tr> *@
-@*                             <td>@p.User.Username</td> *@
-@*                             <td>@p.User.FirstName @p.User.LastName</td> *@
-@*                             <td>@p.User.Email</td> *@
-@*                             <td>@p.DateOfBirth?.ToShortDateString()</td> *@
+@*                             <td>@a.User.Email</td> *@
+@*                             <td>@a.User.FirstName @a.User.LastName</td> *@
+@*                             <td>@a.User.Email</td> *@
+@*                             <td>@a.Notes</td> *@
 @*                             <td> *@
-@*                                 <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Details</a> *@
-@*                                 <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">Edit</a> *@
-@*                                 <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-outline-danger">Delete</a> *@
+@*                                 <a asp-action="Details" asp-route-id="@a.Id" class="btn btn-sm btn-outline-secondary">Details</a> *@
+@*                                 <a asp-action="Edit" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">Edit</a> *@
+@*                                 <a asp-action="Delete" asp-route-id="@a.Id" class="btn btn-sm btn-outline-danger">Delete</a> *@
 @*                             </td> *@
 @*                         </tr> *@
 @*                     } *@
