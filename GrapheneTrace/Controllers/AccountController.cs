@@ -59,10 +59,10 @@ namespace GrapheneTrace.Controllers
                 return RedirectToAction("Admins", "Admin");
 
             if (await _userManager.IsInRoleAsync(user, "Clinician"))
-                return RedirectToAction("Dashboard", "Clinician");
+                return RedirectToAction("Index", "Clinician");
 
             if (await _userManager.IsInRoleAsync(user, "Patient"))
-                return RedirectToAction("Dashboard", "Patient");
+                return RedirectToAction("Index", "Patient");
 
             // fallback
             if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))

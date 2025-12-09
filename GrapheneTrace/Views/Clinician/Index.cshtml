@@ -1,0 +1,60 @@
+@model GrapheneTrace.ViewModels.ClinicianDashboardViewModel
+
+@{
+    ViewData["Title"] = "Clinician Dashboard";
+}
+
+<div class="container mt-4">
+    <h2>Clinician Dashboard</h2>
+
+    <h4 class="mt-3">Your Details</h4>
+    <table class="table table-bordered">
+        <tr><th>First Name</th><td>@Model.User.FirstName</td></tr>
+        <tr><th>Last Name</th><td>@Model.User.LastName</td></tr>
+        <tr><th>Email</th><td>@Model.User.Email</td></tr>
+        <tr><th>Specialisation</th><td>@Model.Clinician.Specialisation</td></tr>
+        <tr><th>Registration #</th><td>@Model.Clinician.RegistrationNumber</td></tr>
+        <tr>
+            <th>Access Mode</th>
+            <td>
+                @(Model.Clinician.AccessAllPatients ? "All patients" : "Only assigned patients")
+            </td>
+        </tr>
+    </table>
+
+    <a asp-controller="Profile" asp-action="Edit" class="btn btn-primary me-2">
+        Edit Personal Info
+    </a>
+    <a asp-controller="Profile" asp-action="ChangePassword" class="btn btn-warning">
+        Change Password
+    </a>
+
+    <h4 class="mt-4">Your Patients</h4>
+
+    @if (Model.Patients.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Date of Birth</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var patient in Model.Patients)
+            {
+                <tr>
+                    <td>@patient.User.FirstName @patient.User.LastName</td>
+                    <td>@patient.User.Email</td>
+                    <td>@patient.DateOfBirth?.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No patients assigned.</p>
+    }
+</div>

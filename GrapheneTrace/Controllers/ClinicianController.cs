@@ -22,131 +22,70 @@ namespace GrapheneTrace.Controllers
             _context     = context;
         }
 
-        public IActionResult Dashboard()
-        {
-            return View(); // Views/Clinician/Dashboard.cshtml
-        }
-
-        // Patients this clinician can see
-        public async Task<IActionResult> Patients()
+        // GET: /Clinician/Index
+        public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
+
+            var clinician = await _context.Clinicians
+                .Include(c => c.User)
+                .Include(c => c.PatientLinks)
+                    .ThenInclude(cp => cp.Patient)
+                        .ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(c => c.UserId == user.Id);
+
+            if (clinician == null)
+                return NotFound("Clinician profile not found for this user.");
+
+            // If AccessAllPatients == true -> see all patients.
+            // Otherwise -> only patients linked via ClinicianPatients.
+            var patientsQuery = _context.Patients
+                .Include(p => p.User)
+                .AsQueryable();
+
+            var patients = clinician.AccessAllPatients
+                ? await patientsQuery.ToListAsync()
+                : clinician.PatientLinks
+                    .Select(cp => cp.Patient)
+                    .ToList();
+
+            var vm = new ClinicianDashboardViewModel
+            {
+                Clinician = clinician,
+                Patients  = patients
+            };
+
+            return View(vm); // Views/Clinician/Index.cshtml
+        }
+
+        // OPTIONAL: view specific patient details (ONLY own patient)
+        [HttpGet]
+        public async Task<IActionResult> PatientDetails(System.Guid id)
+        {
+            var user = await _userManager.GetUserAsync(User);
 
             var clinician = await _context.Clinicians
                 .Include(c => c.PatientLinks)
-                .ThenInclude(cp => cp.Patient)
-                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(c => c.UserId == user.Id);
 
             if (clinician == null)
                 return NotFound();
 
-            if (clinician.AccessAllPatients)
-            {
-                var allPatients = await _context.Patients
-                    .Include(p => p.User)
-                    .ToListAsync();
-                return View(allPatients); // Views/Clinician/Patients.cshtml
-            }
-            else
-            {
-                var allowedPatients = clinician.PatientLinks.Select(cp => cp.Patient).ToList();
-                return View(allowedPatients);
-            }
-        }
+            // Check access
+            bool canSee = clinician.AccessAllPatients ||
+                          clinician.PatientLinks.Any(cp => cp.PatientId == id);
 
-        [HttpGet]
-        public async Task<IActionResult> Profile()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (!canSee)
+                return Forbid();
+
+            var patient = await _context.Patients
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (patient == null)
                 return NotFound();
 
-            var clinician = await _context.Clinicians.FirstOrDefaultAsync(c => c.UserId == user.Id);
-            if (clinician == null)
-            {
-                clinician = new Clinician { UserId = user.Id };
-                _context.Clinicians.Add(clinician);
-                await _context.SaveChangesAsync();
-            }
-
-            var vm = new ClinicianProfileViewModel
-            {
-                FirstName         = user.FirstName,
-                LastName          = user.LastName,
-                Email             = user.Email,
-                DateOfBirth       = null,
-                Specialisation    = clinician.Specialisation,
-                RegistrationNumber = clinician.RegistrationNumber
-            };
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(ClinicianProfileViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
-
-            var clinician = await _context.Clinicians.FirstOrDefaultAsync(c => c.UserId == user.Id);
-            if (clinician == null)
-            {
-                clinician = new Clinician { UserId = user.Id };
-                _context.Clinicians.Add(clinician);
-            }
-
-            user.FirstName = model.FirstName;
-            user.LastName  = model.LastName;
-            user.Email     = model.Email;
-            user.UserName  = model.Email;
-
-            clinician.Specialisation     = model.Specialisation;
-            clinician.RegistrationNumber = model.RegistrationNumber;
-
-            await _userManager.UpdateAsync(user);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Profile));
-        }
-
-        [HttpGet]
-        public IActionResult ChangePassword()
-        {
-            return View(new ChangePasswordViewModel());
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
-
-            var result = await _userManager.ChangePasswordAsync(
-                user,
-                model.CurrentPassword,
-                model.NewPassword);
-
-            if (!result.Succeeded)
-            {
-                foreach (var e in result.Errors)
-                    ModelState.AddModelError(string.Empty, e.Description);
-                return View(model);
-            }
-
-            return RedirectToAction(nameof(Profile));
+            return View(patient); // Views/Clinician/PatientDetails.cshtml
         }
     }
 }
