@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GrapheneTrace.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251209030840_InitialIdentitySetup")]
-    partial class InitialIdentitySetup
+    [Migration("20251209053528_InitialSetup")]
+    partial class InitialSetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,35 @@ namespace GrapheneTrace.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("GrapheneTrace.Models.Alert", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FrameId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FrameId");
+
+                    b.ToTable("Alerts");
+                });
 
             modelBuilder.Entity("GrapheneTrace.Models.ApplicationUser", b =>
                 {
@@ -138,6 +167,64 @@ namespace GrapheneTrace.Migrations
                     b.ToTable("ClinicianPatients");
                 });
 
+            modelBuilder.Entity("GrapheneTrace.Models.ClinicianReply", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClinicianUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClinicianUserId");
+
+                    b.HasIndex("CommentId");
+
+                    b.ToTable("ClinicianReplies");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.FrameMetrics", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("AveragePressure")
+                        .HasColumnType("float");
+
+                    b.Property<double>("ContactAreaPercent")
+                        .HasColumnType("float");
+
+                    b.Property<Guid>("FrameId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("LeftRightBalance")
+                        .HasColumnType("float");
+
+                    b.Property<int>("PeakPressureIndex")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FrameId")
+                        .IsUnique();
+
+                    b.ToTable("FrameMetrics");
+                });
+
             modelBuilder.Entity("GrapheneTrace.Models.Patient", b =>
                 {
                     b.Property<Guid>("Id")
@@ -157,6 +244,61 @@ namespace GrapheneTrace.Migrations
                         .IsUnique();
 
                     b.ToTable("Patients");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.PressureFrame", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("FlaggedForReview")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RawDataJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("PressureFrames");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.UserComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FrameId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FrameId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserComments");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -292,6 +434,17 @@ namespace GrapheneTrace.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("GrapheneTrace.Models.Alert", b =>
+                {
+                    b.HasOne("GrapheneTrace.Models.PressureFrame", "Frame")
+                        .WithMany("Alerts")
+                        .HasForeignKey("FrameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Frame");
+                });
+
             modelBuilder.Entity("GrapheneTrace.Models.Clinician", b =>
                 {
                     b.HasOne("GrapheneTrace.Models.ApplicationUser", "User")
@@ -322,6 +475,36 @@ namespace GrapheneTrace.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("GrapheneTrace.Models.ClinicianReply", b =>
+                {
+                    b.HasOne("GrapheneTrace.Models.ApplicationUser", "ClinicianUser")
+                        .WithMany()
+                        .HasForeignKey("ClinicianUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GrapheneTrace.Models.UserComment", "Comment")
+                        .WithMany("Replies")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ClinicianUser");
+
+                    b.Navigation("Comment");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.FrameMetrics", b =>
+                {
+                    b.HasOne("GrapheneTrace.Models.PressureFrame", "Frame")
+                        .WithOne("Metrics")
+                        .HasForeignKey("GrapheneTrace.Models.FrameMetrics", "FrameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Frame");
+                });
+
             modelBuilder.Entity("GrapheneTrace.Models.Patient", b =>
                 {
                     b.HasOne("GrapheneTrace.Models.ApplicationUser", "User")
@@ -329,6 +512,36 @@ namespace GrapheneTrace.Migrations
                         .HasForeignKey("GrapheneTrace.Models.Patient", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.PressureFrame", b =>
+                {
+                    b.HasOne("GrapheneTrace.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.UserComment", b =>
+                {
+                    b.HasOne("GrapheneTrace.Models.PressureFrame", "Frame")
+                        .WithMany("Comments")
+                        .HasForeignKey("FrameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GrapheneTrace.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Frame");
 
                     b.Navigation("User");
                 });
@@ -399,6 +612,21 @@ namespace GrapheneTrace.Migrations
             modelBuilder.Entity("GrapheneTrace.Models.Patient", b =>
                 {
                     b.Navigation("ClinicianLinks");
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.PressureFrame", b =>
+                {
+                    b.Navigation("Alerts");
+
+                    b.Navigation("Comments");
+
+                    b.Navigation("Metrics")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GrapheneTrace.Models.UserComment", b =>
+                {
+                    b.Navigation("Replies");
                 });
 #pragma warning restore 612, 618
         }

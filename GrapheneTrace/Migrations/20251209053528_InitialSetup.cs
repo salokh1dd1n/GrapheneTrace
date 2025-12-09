@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GrapheneTrace.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialIdentitySetup : Migration
+    public partial class InitialSetup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -222,6 +222,130 @@ namespace GrapheneTrace.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "PressureFrames",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RawDataJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FlaggedForReview = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PressureFrames", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PressureFrames_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Alerts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FrameId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Severity = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Alerts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Alerts_PressureFrames_FrameId",
+                        column: x => x.FrameId,
+                        principalTable: "PressureFrames",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FrameMetrics",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FrameId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PeakPressureIndex = table.Column<int>(type: "int", nullable: false),
+                    ContactAreaPercent = table.Column<double>(type: "float", nullable: false),
+                    AveragePressure = table.Column<double>(type: "float", nullable: false),
+                    LeftRightBalance = table.Column<double>(type: "float", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FrameMetrics", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FrameMetrics_PressureFrames_FrameId",
+                        column: x => x.FrameId,
+                        principalTable: "PressureFrames",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserComments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FrameId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserComments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserComments_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserComments_PressureFrames_FrameId",
+                        column: x => x.FrameId,
+                        principalTable: "PressureFrames",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ClinicianReplies",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CommentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ClinicianUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClinicianReplies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ClinicianReplies_AspNetUsers_ClinicianUserId",
+                        column: x => x.ClinicianUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ClinicianReplies_UserComments_CommentId",
+                        column: x => x.CommentId,
+                        principalTable: "UserComments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Alerts_FrameId",
+                table: "Alerts",
+                column: "FrameId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -267,9 +391,25 @@ namespace GrapheneTrace.Migrations
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ClinicianReplies_ClinicianUserId",
+                table: "ClinicianReplies",
+                column: "ClinicianUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ClinicianReplies_CommentId",
+                table: "ClinicianReplies",
+                column: "CommentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Clinicians_UserId",
                 table: "Clinicians",
                 column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FrameMetrics_FrameId",
+                table: "FrameMetrics",
+                column: "FrameId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -277,11 +417,29 @@ namespace GrapheneTrace.Migrations
                 table: "Patients",
                 column: "UserId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PressureFrames_PatientId",
+                table: "PressureFrames",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserComments_FrameId",
+                table: "UserComments",
+                column: "FrameId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserComments_UserId",
+                table: "UserComments",
+                column: "UserId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Alerts");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -301,10 +459,22 @@ namespace GrapheneTrace.Migrations
                 name: "ClinicianPatients");
 
             migrationBuilder.DropTable(
+                name: "ClinicianReplies");
+
+            migrationBuilder.DropTable(
+                name: "FrameMetrics");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Clinicians");
+
+            migrationBuilder.DropTable(
+                name: "UserComments");
+
+            migrationBuilder.DropTable(
+                name: "PressureFrames");
 
             migrationBuilder.DropTable(
                 name: "Patients");

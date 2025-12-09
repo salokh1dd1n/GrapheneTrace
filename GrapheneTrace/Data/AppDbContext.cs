@@ -11,6 +11,13 @@ namespace GrapheneTrace.Data
         {
         }
 
+        // Pressure Data Models
+        public DbSet<PressureFrame> PressureFrames { get; set; } = default!;
+        public DbSet<FrameMetrics> FrameMetrics { get; set; } = default!;
+        public DbSet<Alert> Alerts { get; set; } = default!;
+        public DbSet<UserComment> UserComments { get; set; } = default!;
+        public DbSet<ClinicianReply> ClinicianReplies { get; set; } = default!;
+
         public DbSet<Patient> Patients { get; set; } = default!;
         public DbSet<Clinician> Clinicians { get; set; } = default!;
         public DbSet<ClinicianPatient> ClinicianPatients { get; set; } = default!;
@@ -48,6 +55,70 @@ namespace GrapheneTrace.Data
                 .WithMany(p => p.ClinicianLinks)
                 .HasForeignKey(cp => cp.PatientId)
                 .OnDelete(DeleteBehavior.Restrict); // IMPORTANT
+            // ===============================
+            // PressureFrame ↔ Patient
+            // ===============================
+            builder.Entity<PressureFrame>()
+                .HasOne(f => f.Patient)
+                .WithMany() // or .WithMany(p => p.PressureFrames) if you add a collection
+                .HasForeignKey(f => f.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ===============================
+            // PressureFrame ↔ FrameMetrics
+            // ===============================
+            builder.Entity<PressureFrame>()
+                .HasOne(f => f.Metrics)
+                .WithOne(m => m.Frame)
+                .HasForeignKey<FrameMetrics>(m => m.FrameId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ===============================
+            // PressureFrame ↔ UserComments
+            // ===============================
+            builder.Entity<PressureFrame>()
+                .HasMany(f => f.Comments)
+                .WithOne(c => c.Frame)
+                .HasForeignKey(c => c.FrameId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ===============================
+            // PressureFrame ↔ Alerts
+            // ===============================
+            builder.Entity<PressureFrame>()
+                .HasMany(f => f.Alerts)
+                .WithOne(a => a.Frame)
+                .HasForeignKey(a => a.FrameId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ===============================
+            // UserComment ↔ ClinicianReply
+            // ===============================
+            builder.Entity<UserComment>()
+                .HasMany(c => c.Replies)
+                .WithOne(r => r.Comment)
+                .HasForeignKey(r => r.CommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ===============================
+            // UserComment ↔ ApplicationUser
+            // (author of the comment)
+            // ===============================
+            builder.Entity<UserComment>()
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ===============================
+            // ClinicianReply ↔ ApplicationUser
+            // (clinician who replied)
+            // ===============================
+            builder.Entity<ClinicianReply>()
+                .HasOne(r => r.ClinicianUser)
+                .WithMany()
+                .HasForeignKey(r => r.ClinicianUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

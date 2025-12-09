@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using GrapheneTrace.Data;
 using GrapheneTrace.Models;
 using Microsoft.AspNetCore.Identity;
+using GrapheneTrace.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 // DbContext & SQL Server connection
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Services
+builder.Services.AddSingleton(new PressureAnalysisOptions());
+builder.Services.AddScoped<PressureAnalysisService>();
 
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()

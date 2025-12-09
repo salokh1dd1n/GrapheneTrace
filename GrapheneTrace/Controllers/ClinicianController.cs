@@ -19,7 +19,7 @@ namespace GrapheneTrace.Controllers
         public ClinicianController(UserManager<ApplicationUser> userManager, AppDbContext context)
         {
             _userManager = userManager;
-            _context     = context;
+            _context = context;
         }
 
         // GET: /Clinician/Index
@@ -30,8 +30,8 @@ namespace GrapheneTrace.Controllers
             var clinician = await _context.Clinicians
                 .Include(c => c.User)
                 .Include(c => c.PatientLinks)
-                    .ThenInclude(cp => cp.Patient)
-                        .ThenInclude(p => p.User)
+                .ThenInclude(cp => cp.Patient)
+                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(c => c.UserId == user.Id);
 
             if (clinician == null)
@@ -52,7 +52,7 @@ namespace GrapheneTrace.Controllers
             var vm = new ClinicianDashboardViewModel
             {
                 Clinician = clinician,
-                Patients  = patients
+                Patients = patients
             };
 
             return View(vm); // Views/Clinician/Index.cshtml
@@ -86,6 +86,84 @@ namespace GrapheneTrace.Controllers
                 return NotFound();
 
             return View(patient); // Views/Clinician/PatientDetails.cshtml
+        }
+
+        // GET: /Clinician/Alerts
+        public async Task<IActionResult> Alerts()
+        {
+            var clinicianUser = await _userManager.GetUserAsync(User);
+
+            var clinician = await _context.Clinicians
+                .Include(c => c.PatientLinks)
+                .ThenInclude(cp => cp.Patient)
+                .FirstOrDefaultAsync(c => c.UserId == clinicianUser.Id);
+
+            if (clinician == null)
+                return NotFound("Clinician profile not found.");
+
+            IQueryable<Alert> alertsQuery = _context.Alerts
+                .Include(a => a.Frame)
+                .ThenInclude(f => f.Patient)
+                .ThenInclude(p => p.User)
+                .Where(a => a.Status == AlertStatus.New);
+
+            // If this clinician can only see their linked patients:
+            if (!clinician.AccessAllPatients)
+            {
+                var patientIds = clinician.PatientLinks.Select(pl => pl.PatientId).ToList();
+                alertsQuery = alertsQuery.Where(a => patientIds.Contains(a.Frame.PatientId));
+            }
+
+            var alerts = await alertsQuery
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            return View(alerts); // list of alerts with link to /Clinician/Frame/{id}
+        }
+
+        // GET: /Clinician/Frame/{id}
+        public async Task<IActionResult> Frame(Guid id)
+        {
+            var frame = await _context.PressureFrames
+                .Include(f => f.Patient).ThenInclude(p => p.User)
+                .Include(f => f.Metrics)
+                .Include(f => f.Comments)
+                .ThenInclude(c => c.User)
+                .Include(f => f.Comments)
+                .ThenInclude(c => c.Replies)
+                .ThenInclude(r => r.ClinicianUser)
+                .FirstOrDefaultAsync(f => f.Id == id);
+
+            if (frame == null)
+                return NotFound();
+
+            return View(frame); // similar to Patient view but with reply form
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReplyToComment(Guid commentId, string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return RedirectToAction("Alerts");
+
+            var clinicianUser = await _userManager.GetUserAsync(User);
+
+            var reply = new ClinicianReply
+            {
+                CommentId = commentId,
+                ClinicianUserId = clinicianUser.Id,
+                Text = text
+            };
+
+            _context.ClinicianReplies.Add(reply);
+            await _context.SaveChangesAsync();
+
+            var comment = await _context.UserComments
+                .Include(c => c.Frame)
+                .FirstOrDefaultAsync(c => c.Id == commentId);
+
+            return RedirectToAction("Frame", new { id = comment!.FrameId });
         }
     }
 }
