@@ -1,38 +1,93 @@
 @model GrapheneTrace.ViewModels.PressureHistoryViewModel
 @using System.Globalization
+@using Newtonsoft.Json
 
 @{
-ViewData["Title"] = "Pressure History";
+    ViewData["Title"] = "Pressure History";
 
-string selectedRange = ViewBag.SelectedRange as string ?? "24h";
+    string selectedRange = ViewBag.SelectedRange as string ?? "24h";
+    DateTime? selectedDate = Model.SelectedDate;
+    string selectedDateLabel = selectedDate.HasValue
+        ? selectedDate.Value.ToString("dd MMM yyyy")
+        : "Latest available data";
+    string selectedDateValue = selectedDate.HasValue
+        ? selectedDate.Value.ToString("yyyy-MM-dd")
+        : "";
 }
 
 <div class="container-fluid">
     <h2 class="mb-4">Pressure History</h2>
 
-    <!-- RANGE SELECTOR -->
+    <!-- RANGE + DATE SELECTOR -->
     <div class="card mb-3">
-        <div class="card-body d-flex align-items-center">
-            <form method="get" asp-action="History" asp-controller="PatientPressure" class="d-flex align-items-center">
-                <label class="form-label me-2 mb-0">Time range:</label>
-                <select name="range" class="form-select form-select-sm" style="width:auto;">
-                    <option value="1h"  selected="@(selectedRange == "1h"  ? "selected" : "")">Last 1 hour</option>
-                    <option value="6h"  selected="@(selectedRange == "6h"  ? "selected" : "")">Last 6 hours</option>
-                    <option value="24h" selected="@(selectedRange == "24h" ? "selected" : "")">Last 24 hours</option>
-                </select>
-                <button type="submit" class="btn btn-sm btn-primary ms-2">Apply</button>
+        <div class="card-body d-flex flex-wrap align-items-center gap-2">
+            <form method="get"
+                  asp-action="History"
+                  asp-controller="PatientPressure"
+                  class="d-flex flex-wrap align-items-center gap-2">
+
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0">Time range:</label>
+                    <select name="range" class="form-select form-select-sm" style="width:auto;">
+                        @if (selectedRange == "1h")
+                        {
+                            <option value="1h" selected>Last 1 hour</option>
+                        }
+                        else
+                        {
+                            <option value="1h">Last 1 hour</option>
+                        }
+
+                        @if (selectedRange == "6h")
+                        {
+                            <option value="6h" selected>Last 6 hours</option>
+                        }
+                        else
+                        {
+                            <option value="6h">Last 6 hours</option>
+                        }
+
+                        @if (selectedRange == "24h")
+                        {
+                            <option value="24h" selected>Last 24 hours</option>
+                        }
+                        else
+                        {
+                            <option value="24h">Last 24 hours</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0">Date:</label>
+                    <input type="date"
+                           name="selectedDate"
+                           class="form-control form-control-sm"
+                           style="width:auto;"
+                           value="@selectedDateValue"/>
+                </div>
+
+                <button type="submit" class="btn btn-sm btn-primary">
+                    Apply
+                </button>
             </form>
 
-            <div class="ms-auto small text-muted">
+            <div class="ms-auto small text-muted text-end">
                 @if (Model.Points != null && Model.Points.Count > 0)
                 {
-                var first = Model.Points.First().Timestamp;
-                var last  = Model.Points.Last().Timestamp;
-                <span>Showing data from @first.ToLocalTime() to @last.ToLocalTime()</span>
+                    var first = Model.Points.First().Timestamp.ToLocalTime();
+                    var last = Model.Points.Last().Timestamp.ToLocalTime();
+
+                    <div>Showing data for: <strong>@selectedDateLabel</strong></div>
+
+                    <div>
+                        From @first.ToString("dd MMM yyyy HH:mm") –
+                        @last.ToString("dd MMM yyyy HH:mm")
+                    </div>
                 }
                 else
                 {
-                <span>No data available for this period.</span>
+                    <span>No data available for this period.</span>
                 }
             </div>
         </div>
@@ -67,7 +122,7 @@ string selectedRange = ViewBag.SelectedRange as string ?? "24h";
                 <div class="card-body">
                     <h6 class="text-muted mb-1">Risk Score (0–10)</h6>
                     <h3 class="mb-0">
-                        @Model.CurrentRiskScore.ToString("0.0", CultureInfo.InvariantCulture)
+                        @Model.CurrentRiskScore.ToString("0.0", CultureInfo.InvariantCulture)/10
                     </h3>
                     <small class="text-muted">Combined pressure & contact risk indicator.</small>
                 </div>
@@ -77,90 +132,100 @@ string selectedRange = ViewBag.SelectedRange as string ?? "24h";
 
     @if (Model.Points == null || Model.Points.Count == 0)
     {
-    <div class="alert alert-info">
-        No pressure data available yet. Please upload some frames first.
-    </div>
+        <div class="alert alert-info">
+            No pressure data available yet for the selected date and time range.
+        </div>
     }
     else
     {
-    <div class="row">
-        <!-- PEAK PRESSURE CHART -->
-        <div class="col-lg-8 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Peak Pressure over Time (mmHg)</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="peakPressureChart" style="width:100%; height:320px;"></canvas>
+        <div class="row">
+            <!-- PEAK PRESSURE CHART -->
+            <div class="col-lg-8 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Peak Pressure over Time (mmHg)</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="peakPressureChart" style="width:100%; height:320px;"></canvas>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- HEATMAP -->
-        <div class="col-lg-4 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Latest Pressure Map</h5>
-                    @if (Model.Points != null && Model.Points.Count > 0)
-                    {
-                    var last = Model.Points.Last().Timestamp;
-                    <small class="text-muted">@last.ToLocalTime()</small>
-                    }
-                </div>
-                <div class="card-body">
+            <!-- HEATMAP -->
+            <div class="col-lg-4 mb-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Latest Pressure Map</h5>
+                        @if (Model.Points != null && Model.Points.Count > 0)
+                        {
+                            var last = Model.Points.Last().Timestamp.ToLocalTime();
+                            <small class="text-muted">@last.ToString("dd MMM yyyy HH:mm")</small>
+                        }
+                    </div>
                     @{
-                        int rows = Model.LatestFrameMatrix.GetLength(0);
-                        int cols = Model.LatestFrameMatrix.GetLength(1);
+                        // Precompute some values for the heatmap
+                        var matrix = Model.LatestFrameMatrix;
+                        bool hasFrame = matrix != null &&
+                                        matrix.GetLength(0) > 0 &&
+                                        matrix.GetLength(1) > 0;
 
+                        int rows = 0;
+                        int cols = 0;
                         int maxVal = 1;
 
-                        // find max value for heat color scaling
-                        for (int y = 0; y < rows; y++)
+                        if (hasFrame)
                         {
-                            for (int x = 0; x < cols; x++)
+                            rows = matrix.GetLength(0);
+                            cols = matrix.GetLength(1);
+
+                            for (int y = 0; y < rows; y++)
                             {
-                                if (Model.LatestFrameMatrix[y, x] > maxVal)
-                                    maxVal = Model.LatestFrameMatrix[y, x];
+                                for (int x = 0; x < cols; x++)
+                                {
+                                    if (matrix[y, x] > maxVal)
+                                        maxVal = matrix[y, x];
+                                }
                             }
                         }
-
-                        // declare sb *before* using it
-                        var sb = new System.Text.StringBuilder();
-                        sb.Append("<div class='heatmap-grid'>");
-
-                        for (int y = 0; y < rows; y++)
-                        {
-                            for (int x = 0; x < cols; x++)
-                            {
-                                int v = Model.LatestFrameMatrix[y, x];
-                                double ratio = maxVal == 0 ? 0 : (double)v / maxVal;
-
-                                int r = 255;
-                                int g = 255 - (int)(180 * ratio);
-                                int b = 255 - (int)(255 * ratio);
-
-                                string color = $"rgb({r},{g},{b})";
-
-                                sb.Append(
-                                    $"<div class='heat-cell' title='{v}' style='background-color:{color};'></div>"
-                                );
-                            }
-                        }
-
-                        sb.Append("</div>");
                     }
 
-                    @Html.Raw(sb.ToString())
+                    <div class="card-body">
+                        @if (!hasFrame)
+                        {
+                            <div class="text-muted">No frame available.</div>
+                        }
+                        else
+                        {
+                            <div class="heatmap-grid">
+                                @for (int y = 0; y < rows; y++)
+                                {
+                                    for (int x = 0; x < cols; x++)
+                                    {
+                                        var v = matrix[y, x];
+                                        double ratio = maxVal == 0 ? 0 : (double)v / maxVal;
 
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <small class="text-muted">Low</small>
-                        <div class="heat-legend-bar flex-grow-1 mx-2"></div>
-                        <small class="text-muted">High</small>
+                                        int r = 255;
+                                        int g = 255 - (int)(180 * ratio);
+                                        int b = 255 - (int)(255 * ratio);
+                                        string color = $"rgb({r},{g},{b})";
+
+                                        <div class="heat-cell"
+                                             title="@v"
+                                             style="background-color:@color;"></div>
+                                    }
+                                }
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <small class="text-muted">Low</small>
+                                <div class="heat-legend-bar flex-grow-1 mx-2"></div>
+                                <small class="text-muted">High</small>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
-    </div>
     }
 </div>
 
@@ -191,79 +256,56 @@ string selectedRange = ViewBag.SelectedRange as string ?? "24h";
 </style>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-    (function () {
-        var hasData = @((Model.Points != null && Model.Points.Count > 0) ? "true" : "false");
-        if (!hasData) {
-            return;
-        }
+    <script>
+        (function () {
+            // Labels: time
+            var labels = @Html.Raw(
+                             JsonConvert.SerializeObject(
+                                 Model.Points.Select(p => p.Timestamp.ToString("HH:mm"))
+                             )
+                         );
 
-        var labels = [];
-        var peakData = [];
+            // Peak Pressure mmHg
+            var peakData = @Html.Raw(
+                               JsonConvert.SerializeObject(
+                                   Model.Points.Select(p => p.PeakPressure)
+                               )
+                           );
 
-        @foreach (var p in Model.Points)
-        {
-        var t = p.Timestamp.ToLocalTime().ToString("HH:mm");
-        var peak = p.PeakPressure.ToString("0.##", CultureInfo.InvariantCulture);
-
-        @:labels.push("@t");
-        @:peakData.push(@peak);
-        }
-
-        var ctx = document.getElementById('peakPressureChart');
-        if (!ctx) return;
-
-        var chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Peak Pressure (mmHg)',
-                    data: peakData,
-                    tension: 0.3,
-                    borderWidth: 2,
-                    pointRadius: 2,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
+            // Example Chart.js config
+            var ctx = document.getElementById('peakPressureChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Peak Pressure (mmHg)',
+                        data: peakData,
+                        fill: false,
+                        borderWidth: 2,
+                        tension: 0.2
+                    }]
                 },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Time'
-                        }
-                    },
-                    y: {
-                        min: 0,
-                        max: 200,
-                        title: {
-                            display: true,
-                            text: 'Peak Pressure (mmHg)'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (ctx) {
-                                return ctx.parsed.y.toFixed(1) + ' mmHg';
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'mmHg'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
                             }
                         }
                     }
                 }
-            }
-        });
-    })();
-</script>
+            });
+        })();
+    </script>
 }

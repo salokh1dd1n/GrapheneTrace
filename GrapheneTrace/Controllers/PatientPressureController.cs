@@ -20,9 +20,12 @@ namespace GrapheneTrace.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+
         private readonly PressureAnalysisService _pressureAnalysisService;
+
         // Adjust if sensor calibration is different
         private const double MaxSensorPressureMmHg = 200.0;
+
         public PatientPressureController(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
@@ -151,7 +154,7 @@ namespace GrapheneTrace.Controllers
                 // Compute metrics for this frame
                 var metrics = _pressureAnalysisService.ComputeMetrics(matrix);
                 metrics.FrameId = frame.Id;
-                metrics.Timestamp = frameTimestamp;
+                frame.Timestamp = frameTimestamp;
 
                 frame.Metrics = metrics;
 
@@ -178,7 +181,7 @@ namespace GrapheneTrace.Controllers
         // RiskScore    -> 0–10
         // =====================================================
         [HttpGet]
-        public async Task<IActionResult> History(string range = "24h")
+        public async Task<IActionResult> History(string range = "24h", DateTime? selectedDate = null)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -190,7 +193,7 @@ namespace GrapheneTrace.Controllers
             if (patient == null)
                 return NotFound("Patient profile not found.");
 
-            // 1) Decide time window based on "range"
+            // ------------ 1) Decide time window ------------
             TimeSpan window;
             switch (range)
             {
@@ -202,77 +205,85 @@ namespace GrapheneTrace.Controllers
                     break;
                 case "24h":
                 default:
-                    range  = "24h";
+                    range = "24h";
                     window = TimeSpan.FromHours(24);
                     break;
             }
 
-            var now      = DateTime.UtcNow;
-            var fromTime = now - window;
+            // ------------ 2) Decide end time ------------
+            DateTime endTimeUtc;
+            if (selectedDate.HasValue)
+            {
+                // "End of that day" (simple version)
+                var dayLocal = selectedDate.Value.Date;
+                endTimeUtc = dayLocal.AddDays(1); // 00:00 next day
+            }
+            else
+            {
+                endTimeUtc = DateTime.UtcNow;
+            }
 
-            // 2) Base query: all frames for this patient with metrics
+            var fromTimeUtc = endTimeUtc - window;
+
+            // ------------ 3) Base query with metrics ------------
             var framesQuery = _context.PressureFrames
                 .Include(f => f.Metrics)
                 .Where(f => f.PatientId == patient.Id && f.Metrics != null);
 
-            // 3) Filter by selected time window
+            // ------------ 4) Filter by time window ------------
             var framesInRange = await framesQuery
-                .Where(f => f.Timestamp >= fromTime)
+                .Where(f => f.Timestamp >= fromTimeUtc && f.Timestamp <= endTimeUtc)
                 .OrderBy(f => f.Timestamp)
                 .ToListAsync();
 
-            // If there's no data in that range but there IS data overall,
-            // fall back to all data to avoid an empty chart.
+            // If no data in this window, but some data exists at all, fall back to all data
             if (!framesInRange.Any())
             {
-                var allFrames = await framesQuery
+                framesInRange = await framesQuery
                     .OrderBy(f => f.Timestamp)
                     .ToListAsync();
 
-                if (!allFrames.Any())
+                if (!framesInRange.Any())
                 {
-                    var emptyVm = new PressureHistoryViewModel();
+                    // No data at all
                     ViewBag.SelectedRange = range;
-                    return View(emptyVm);
+                    return View(new PressureHistoryViewModel());
                 }
-
-                framesInRange = allFrames;
             }
 
             var vm = new PressureHistoryViewModel();
 
-            // 4) Build time-series points (one point per frame)
             foreach (var frame in framesInRange)
             {
                 var m = frame.Metrics!;
+                int rawPeak = m.PeakPressureIndex; // 0–255
+                double peakMmHg = rawPeak / 255.0 * MaxSensorPressureMmHg;
 
-                int rawPeak     = m.PeakPressureIndex;                      // 0–255
-                double peakMmHg = rawPeak / 255.0 * MaxSensorPressureMmHg;  // mmHg
-
-                double contact  = m.ContactAreaPercent; // assume already 0–100
-                if (contact < 0)   contact = 0;
+                double contact = m.ContactAreaPercent;
+                if (contact < 0) contact = 0;
                 if (contact > 100) contact = 100;
 
                 double risk10 = ComputeRiskScoreOutOf10(rawPeak, contact);
 
                 vm.Points.Add(new PressureHistoryPoint
                 {
-                    Timestamp          = frame.Timestamp,
-                    PeakPressure       = peakMmHg,   // mmHg
-                    ContactAreaPercent = contact,    // %
-                    RiskScore          = risk10      // 0–10
+                    Timestamp = frame.Timestamp,
+                    PeakPressure = peakMmHg,
+                    ContactAreaPercent = contact,
+                    RiskScore = risk10
                 });
             }
 
             if (vm.Points.Any())
             {
-                var last = vm.Points.Last();
+                // Use *max* peak over window for the KPI
+                vm.CurrentPeakPressure = vm.Points.Max(p => p.PeakPressure);
+                vm.CurrentContactAreaPercent = vm.Points.Average(p => p.ContactAreaPercent);
+                vm.CurrentRiskScore = vm.Points.Max(p => p.RiskScore);
 
-                vm.CurrentPeakPressure       = last.PeakPressure;       // mmHg
-                vm.CurrentContactAreaPercent = last.ContactAreaPercent; // %
-                vm.CurrentRiskScore          = last.RiskScore;          // 0–10
+                // Selected date: keep what user chose, else use last point date
+                vm.SelectedDate = selectedDate?.Date ?? vm.Points.Last().Timestamp.Date;
 
-                vm.SelectedDate = last.Timestamp.Date;
                 vm.AvailableDates = vm.Points
                     .Select(p => p.Timestamp.Date)
                     .Distinct()
@@ -284,70 +295,48 @@ namespace GrapheneTrace.Controllers
                 vm.LatestFrameMatrix = DecodeMatrixJson(lastFrame.MatrixJson);
             }
 
-            // for the dropdown in the view
             ViewBag.SelectedRange = range;
 
             return View(vm);
         }
 
-        // =====================================================
-        // Helper: Risk score 0–10
-        // Combines peak pressure and contact area
-        // =====================================================
-        private double ComputeRiskScoreOutOf10(int rawPeak, double contactAreaPercent)
+        // Same helper you already had
+        private double ComputeRiskScoreOutOf10(int rawPeakIndex, double contactAreaPercent)
         {
-            // Normalise
-            double nPeak = rawPeak / 255.0;             // 0–1
-            double nArea = contactAreaPercent / 100.0;  // 0–1
-
-            // Weighted sum (tune as you like)
-            double score01 = 0.7 * nPeak + 0.3 * nArea;
-
-            if (score01 < 0) score01 = 0;
-            if (score01 > 1) score01 = 1;
-
-            // Scale to 0–10 and round
-            return Math.Round(score01 * 10.0, 1);
+            double peakScore = rawPeakIndex / 255.0 * 10.0; // 0–10
+            double areaScore = contactAreaPercent / 100.0 * 10.0; // 0–10
+            double combined = 0.6 * peakScore + 0.4 * areaScore;
+            if (combined < 0) combined = 0;
+            if (combined > 10) combined = 10;
+            return combined;
         }
 
-        // =====================================================
-        // Helper: Convert MatrixJson (int[][]) → int[,]
-        // for use in the heatmap
-        // =====================================================
-        private int[,] DecodeMatrixJson(string matrixJson)
+        private int[,] DecodeMatrixJson(string json)
         {
-            if (string.IsNullOrWhiteSpace(matrixJson))
+            if (string.IsNullOrWhiteSpace(json))
                 return new int[0, 0];
 
-            int[][]? jagged;
-            try
-            {
-                jagged = JsonConvert.DeserializeObject<int[][]>(matrixJson);
-            }
-            catch
-            {
-                return new int[0, 0];
-            }
+            var jagged = Newtonsoft.Json.JsonConvert
+                .DeserializeObject<int[][]>(json);
 
             if (jagged == null || jagged.Length == 0)
                 return new int[0, 0];
 
             int rows = jagged.Length;
             int cols = jagged[0].Length;
-
             var result = new int[rows, cols];
+
             for (int y = 0; y < rows; y++)
             {
-                if (jagged[y] == null) continue;
                 for (int x = 0; x < cols; x++)
                 {
-                    result[y, x] = jagged[y].Length > x ? jagged[y][x] : 0;
+                    result[y, x] = jagged[y][x];
                 }
             }
 
             return result;
         }
-
+        
         // =====================================================
         // KEEP your existing Upload actions here
         // (GET + POST for CSV upload) – no need to change them

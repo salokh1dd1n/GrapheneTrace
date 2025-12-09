@@ -65,7 +65,6 @@ namespace GrapheneTrace.Services
                 ContactAreaPercent = contactPercent,
                 AveragePressure = avg,
                 LeftRightBalance = balance,
-                RiskScore = risk
             };
         }
 

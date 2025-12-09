@@ -12,7 +12,7 @@ namespace GrapheneTrace.Models
 
         public DateTime Timestamp { get; set; }
 
-        // 32x32 matrix stored as JSON (int[][])
+        // 32x32 matrix as JSON
         public string MatrixJson { get; set; } = default!;
 
         public bool FlaggedForReview { get; set; } = false;
