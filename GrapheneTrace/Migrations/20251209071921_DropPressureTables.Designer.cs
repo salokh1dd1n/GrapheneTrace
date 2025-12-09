@@ -4,6 +4,7 @@ using GrapheneTrace.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GrapheneTrace.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251209071921_DropPressureTables")]
+    partial class DropPressureTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -214,9 +217,6 @@ namespace GrapheneTrace.Migrations
                     b.Property<int>("PeakPressureIndex")
                         .HasColumnType("int");
 
-                    b.Property<double>("RiskScore")
-                        .HasColumnType("float");
-
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
@@ -272,7 +272,7 @@ namespace GrapheneTrace.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("PressureFrames");
+                    b.ToTable("PressureFrame");
                 });
 
             modelBuilder.Entity("GrapheneTrace.Models.UserComment", b =>
@@ -442,7 +442,7 @@ namespace GrapheneTrace.Migrations
                     b.HasOne("GrapheneTrace.Models.PressureFrame", "Frame")
                         .WithMany("Alerts")
                         .HasForeignKey("FrameId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Frame");
@@ -502,7 +502,7 @@ namespace GrapheneTrace.Migrations
                     b.HasOne("GrapheneTrace.Models.PressureFrame", "Frame")
                         .WithOne("Metrics")
                         .HasForeignKey("GrapheneTrace.Models.FrameMetrics", "FrameId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Frame");
@@ -524,7 +524,7 @@ namespace GrapheneTrace.Migrations
                     b.HasOne("GrapheneTrace.Models.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Patient");
@@ -535,7 +535,7 @@ namespace GrapheneTrace.Migrations
                     b.HasOne("GrapheneTrace.Models.PressureFrame", "Frame")
                         .WithMany("Comments")
                         .HasForeignKey("FrameId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("GrapheneTrace.Models.ApplicationUser", "User")

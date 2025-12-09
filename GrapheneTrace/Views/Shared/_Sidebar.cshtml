@@ -1,0 +1,121 @@
+@using Microsoft.AspNetCore.Identity
+@using GrapheneTrace.Models
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+
+    string Active(string c, string a = null) =>
+        (controller == c && (a == null || action == a)) ? "active" : "";
+}
+
+<nav id="sidebar" class="bg-dark text-white d-flex flex-column p-0" style="width:240px; min-height:100vh;">
+    <div class="p-3 border-bottom border-secondary">
+        <h4 class="mb-0">GrapheneTrace</h4>
+        <small class="text-muted">Monitoring System</small>
+    </div>
+
+    <ul class="nav flex-column p-2 mt-2">
+
+        <!-- ADMIN LINKS -->
+        @if (User.IsInRole("Admin"))
+        {
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Admin", "Admins")"
+                   asp-controller="Admin" asp-action="Admins">
+                    <i class="fa-solid fa-user-gear me-2"></i> Admins
+                </a>
+            </li>
+
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Admin", "Clinicians")"
+                   asp-controller="Admin" asp-action="Clinicians">
+                    <i class="fa-solid fa-user-doctor me-2"></i> Clinicians
+                </a>
+            </li>
+
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Admin", "Patients")"
+                   asp-controller="Admin" asp-action="Patients">
+                    <i class="fa-solid fa-user-injured me-2"></i> Patients
+                </a>
+            </li>
+        }
+
+        <!-- CLINICIAN LINKS -->
+        @if (User.IsInRole("Clinician"))
+        {
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Clinician", "Dashboard")"
+                   asp-controller="Clinician" asp-action="Dashboard">
+                    <i class="fa-solid fa-chart-line me-2"></i> Dashboard
+                </a>
+            </li>
+
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Clinician", "Patients")"
+                   asp-controller="Clinician" asp-action="Patients">
+                    <i class="fa-solid fa-users me-2"></i> My Patients
+                </a>
+            </li>
+
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Clinician", "Alerts")"
+                   asp-controller="Clinician" asp-action="Alerts">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Alerts
+                </a>
+            </li>
+        }
+
+        <!-- PATIENT LINKS -->
+        @if (User.IsInRole("Patient"))
+        {
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Patient", "Index")"
+                   asp-controller="Patient" asp-action="Index">
+                    <i class="fa-solid fa-house-chimney me-2"></i> Dashboard
+                </a>
+            </li>
+
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("Patient", "Profile")"
+                   asp-controller="Patient" asp-action="Profile">
+                    <i class="fa-solid fa-id-badge me-2"></i> Profile
+                </a>
+            </li>
+
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("PatientPressure", "Upload")"
+                   asp-controller="PatientPressure" asp-action="Upload">
+                    <i class="fa-solid fa-file-arrow-up me-2"></i> Upload Data
+                </a>
+            </li>
+
+            <li class="nav-item mb-1">
+                <a class="nav-link text-white @Active("PatientPressure", "History")"
+                   asp-controller="PatientPressure" asp-action="History">
+                    <i class="fa-solid fa-chart-area me-2"></i> History &amp; Metrics
+                </a>
+            </li>
+        }
+    </ul>
+
+    <!-- BOTTOM: Signed in as + Logout -->
+    <div class="mt-auto p-3 border-top border-secondary">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-white-50">
+                Signed in as<br />
+                <strong class="text-white">@User.Identity?.Name</strong>
+            </small>
+        </div>
+
+        <form asp-controller="Account" asp-action="Logout" method="post" class="d-grid">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="fa-solid fa-right-from-bracket me-1"></i> LOGOUT
+            </button>
+        </form>
+    </div>
+</nav>

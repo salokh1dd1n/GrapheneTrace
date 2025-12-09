@@ -1,0 +1,40 @@
+@model GrapheneTrace.ViewModels.PressureUploadViewModel
+@{
+    ViewData["Title"] = "Upload Pressure Data";
+    Layout = "_Layout"; // or your dashboard layout
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Upload Daily Pressure Data</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Day" class="form-label"></label>
+                        <input asp-for="Day" class="form-control" type="date" />
+                        <span asp-validation-for="Day" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="File" class="form-label"></label>
+                        <input asp-for="File" type="file" class="form-control" accept=".csv" />
+                        <span asp-validation-for="File" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Upload & Analyse
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

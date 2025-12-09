@@ -1,3 +1,5 @@
+using System;
+
 namespace GrapheneTrace.Models
 {
     public class FrameMetrics
@@ -7,11 +9,13 @@ namespace GrapheneTrace.Models
         public Guid FrameId { get; set; }
         public PressureFrame Frame { get; set; } = default!;
 
+        public DateTime Timestamp { get; set; }
+
         public int PeakPressureIndex { get; set; }
         public double ContactAreaPercent { get; set; }
 
-        // "Nice to have" extra metrics
         public double AveragePressure { get; set; }
-        public double LeftRightBalance { get; set; }  // -1 = all left, +1 = all right
+        public double LeftRightBalance { get; set; }
+        public double RiskScore { get; set; }
     }
 }

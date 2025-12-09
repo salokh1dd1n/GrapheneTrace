@@ -60,3 +60,30 @@ body {
 #content-wrapper {
     background-color: #f5f6fa;
 }
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(32, 1fr);
+    gap: 1px;
+    padding: 4px;
+    background: #e9ecef;
+    border-radius: 6px;
+}
+
+.heat-cell {
+    width: 12px;
+    padding-bottom: 12px; /* keeps cells square */
+    border-radius: 2px;
+}
+
+.heat-legend-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(to right,
+    rgb(255,255,255),
+    rgb(255,240,200),
+    rgb(255,180,150),
+    rgb(255,120,120),
+    rgb(255,60,60)
+    );
+}

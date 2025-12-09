@@ -1,0 +1,173 @@
+@model GrapheneTrace.Models.PressureFrame
+@using Newtonsoft.Json
+
+@{
+    ViewData["Title"] = "Pressure Frame Details";
+
+    // Prepare JSON for JS (RawDataJson should already be a JSON array)
+    var rawJson = Model.MatrixJson ?? "[]";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Heatmap + metrics -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header d-flex justify-content-between">
+                    <span>Pressure Heatmap</span>
+                    <small class="text-muted">
+                        @Model.Timestamp.ToLocalTime().ToString("G")
+                    </small>
+                </div>
+                <div class="card-body">
+                    <div id="heatmap" class="d-grid" style="
+                        grid-template-columns: repeat(32, 1fr);
+                        gap: 1px;
+                        max-width: 400px;
+                        aspect-ratio: 1;
+                        border: 1px solid #ddd;
+                        ">
+                        <!-- cells filled by JS -->
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            Darker squares = higher pressure. This is a simple visual aid, not a medical diagnosis.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Key Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Peak Pressure</dt>
+                        <dd class="col-sm-8">@Model.Metrics.PeakPressureIndex</dd>
+
+                        <dt class="col-sm-4">Contact Area</dt>
+                        <dd class="col-sm-8">@Model.Metrics.ContactAreaPercent.ToString("F1") %</dd>
+
+                        <dt class="col-sm-4">Average Pressure</dt>
+                        <dd class="col-sm-8">@Model.Metrics.AveragePressure.ToString("F1")</dd>
+
+                        <dt class="col-sm-4">Flagged for Review</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.FlaggedForReview)
+                            {
+                                <span class="badge bg-warning text-dark">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">No</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comments -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Your Notes</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AddComment" method="post">
+                        <input type="hidden" name="frameId" value="@Model.Id" />
+                        <div class="mb-3">
+                            <label for="commentText" class="form-label">Add a comment</label>
+                            <textarea name="text"
+                                      id="commentText"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Describe how you felt, discomfort, pain, or anything unusual..."
+                                      required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Save Comment</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">Comment History</h6>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    @if (Model.Comments == null || !Model.Comments.Any())
+                    {
+                        <p class="text-muted mb-0">No comments yet.</p>
+                    }
+                    else
+                    {
+                        foreach (var c in Model.Comments.OrderByDescending(c => c.CreatedAt))
+                        {
+                            <div class="mb-3 border-bottom pb-2">
+                                <div class="d-flex justify-content-between">
+                                    <strong>@c.User.FirstName @c.User.LastName</strong>
+                                    <small class="text-muted">
+                                        @c.CreatedAt.ToLocalTime().ToString("g")
+                                    </small>
+                                </div>
+                                <p class="mb-1">@c.Text</p>
+
+                                @if (c.Replies != null && c.Replies.Any())
+                                {
+                                    <div class="ms-2 mt-1">
+                                        @foreach (var r in c.Replies.OrderBy(r => r.CreatedAt))
+                                        {
+                                            <div class="border-start ps-2 mb-1">
+                                                <small class="text-muted">
+                                                    Clinician @r.ClinicianUser.FirstName @r.ClinicianUser.LastName
+                                                    (@r.CreatedAt.ToLocalTime().ToString("g"))
+                                                </small>
+                                                <p class="mb-0">@r.Text</p>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Raw JSON from server (array of arrays or similar)
+            const data = @Html.Raw(rawJson);
+
+            const heatmap = document.getElementById('heatmap');
+            if (!heatmap || !data || !data.length) return;
+
+            let maxVal = 0;
+            for (let r = 0; r < data.length; r++) {
+                for (let c = 0; c < data[r].length; c++) {
+                    if (data[r][c] > maxVal) maxVal = data[r][c];
+                }
+            }
+            if (maxVal === 0) maxVal = 1;
+
+            for (let r = 0; r < data.length; r++) {
+                for (let c = 0; c < data[r].length; c++) {
+                    const v = data[r][c];
+                    const intensity = v / maxVal; // 0..1
+                    const cell = document.createElement('div');
+                    cell.style.width = '100%';
+                    cell.style.height = '100%';
+
+                    const gray = 255 - Math.round(intensity * 255);
+                    cell.style.backgroundColor = `rgb(${gray}, ${gray}, ${gray})`;
+
+                    heatmap.appendChild(cell);
+                }
+            }
+        })();
+    </script>
+}

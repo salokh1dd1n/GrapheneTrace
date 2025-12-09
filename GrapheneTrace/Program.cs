@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Services
-builder.Services.AddSingleton(new PressureAnalysisOptions());
+builder.Services.AddSingleton(new PressureAnalysisService());
 builder.Services.AddScoped<PressureAnalysisService>();
 
 // Identity

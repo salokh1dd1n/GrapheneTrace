@@ -165,5 +165,29 @@ namespace GrapheneTrace.Controllers
 
             return RedirectToAction("Frame", new { id = comment!.FrameId });
         }
+        
+        // Patient Frames
+        public async Task<IActionResult> PatientFrames(Guid patientId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var clinician = await _context.Clinicians
+                .Include(c => c.PatientLinks)
+                .FirstOrDefaultAsync(c => c.UserId == user.Id);
+
+            // ensure this patient belongs to this clinician (if not AccessAllPatients)
+            if (!clinician.AccessAllPatients &&
+                !clinician.PatientLinks.Any(pl => pl.PatientId == patientId))
+            {
+                return Forbid();
+            }
+
+            var frames = await _context.PressureFrames
+                .Include(f => f.Metrics)
+                .Where(f => f.PatientId == patientId)
+                .OrderByDescending(f => f.Timestamp)
+                .ToListAsync();
+
+            return View(frames);
+        }
     }
 }

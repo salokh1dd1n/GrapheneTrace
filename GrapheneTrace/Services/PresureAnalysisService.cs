@@ -1,76 +1,83 @@
-using System;
+using GrapheneTrace.Models;
 
 namespace GrapheneTrace.Services
 {
-    public class PressureAnalysisOptions
-    {
-        public int LowerThreshold { get; set; } = 20;      // for contact area
-        public int HighPressureThreshold { get; set; } = 220;  // for alerts
-    }
-
-    public class PressureAnalysisResult
-    {
-        public int PeakPressureIndex { get; set; }
-        public double ContactAreaPercent { get; set; }
-        public double AveragePressure { get; set; }
-        public bool HasHighPressureRegion { get; set; }
-    }
-
     public class PressureAnalysisService
     {
-        private readonly PressureAnalysisOptions _options;
-
-        public PressureAnalysisService(PressureAnalysisOptions options)
+        private const int LowerThreshold = 10;   // pixels <10 = ignored
+        private const int ContactThreshold = 20; // threshold for contact
+        
+        public FrameMetrics ComputeMetrics(int[,] matrix)
         {
-            _options = options;
-        }
+            int rows = matrix.GetLength(0);
+            int cols = matrix.GetLength(1);
 
-        public PressureAnalysisResult AnalyzeFrame(int[,] rawFrame)
-        {
-            int rows = rawFrame.GetLength(0);
-            int cols = rawFrame.GetLength(1);
-            int[,] frame = new int[rows, cols];
-
-            int totalCount = rows * cols;
-            int contactCount = 0;
             int peak = 0;
-            long sum = 0;
-            bool highRegion = false;
+            int contactPixels = 0;
+            int totalPixels = rows * cols;
 
-            for (int r = 0; r < rows; r++)
+            long sumPressure = 0;
+
+            long leftSum = 0;
+            long rightSum = 0;
+
+            int half = cols / 2;
+
+            for (int y = 0; y < rows; y++)
             {
-                for (int c = 0; c < cols; c++)
+                for (int x = 0; x < cols; x++)
                 {
-                    int v = rawFrame[r, c];
-
-                    // clamp sensor noise
-                    if (v < 0) v = 0;
-                    if (v > 255) v = 255;
-
-                    frame[r, c] = v;
-                    sum += v;
-
-                    if (v >= _options.LowerThreshold)
-                        contactCount++;
+                    int v = matrix[y, x];
 
                     if (v > peak)
                         peak = v;
 
-                    if (v >= _options.HighPressureThreshold)
-                        highRegion = true;
+                    if (v >= ContactThreshold)
+                        contactPixels++;
+
+                    sumPressure += v;
+
+                    if (x < half)
+                        leftSum += v;
+                    else
+                        rightSum += v;
                 }
             }
 
-            double contactAreaPercent = contactCount / (double)totalCount * 100.0;
-            double avg = sum / (double)totalCount;
+            // Contact area %
+            double contactPercent = (double)contactPixels / totalPixels * 100.0;
 
-            return new PressureAnalysisResult
+            // Average pressure
+            double avg = (double)sumPressure / totalPixels;
+
+            // Left-right balance (range -1 to +1)
+            double balance =
+                (leftSum + rightSum) == 0
+                ? 0
+                : (double)(rightSum - leftSum) / (leftSum + rightSum);
+
+            // Compute risk score
+            double risk = ComputeRiskScore(peak, contactPercent);
+
+            return new FrameMetrics
             {
                 PeakPressureIndex = peak,
-                ContactAreaPercent = contactAreaPercent,
+                ContactAreaPercent = contactPercent,
                 AveragePressure = avg,
-                HasHighPressureRegion = highRegion
+                LeftRightBalance = balance,
+                RiskScore = risk
             };
+        }
+
+        private double ComputeRiskScore(int peakPressure, double contactAreaPercent)
+        {
+            // Normalise values
+            double peakScore = Math.Min(peakPressure / 255.0, 1.0);
+
+            double areaScore = contactAreaPercent / 100.0;
+
+            // Weighted risk formula
+            return (peakScore * 0.7) + (areaScore * 0.3);
         }
     }
 }
